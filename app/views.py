@@ -4,11 +4,21 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.contrib.auth import login,authenticate,logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from app.models import *
 
 # Create your views here.
 from django.core.mail import send_mail
+
 def home(request):
+    if request.session.get('username'):
+        username=request.session.get('username')
+        d={'username':username}
+        return render(request,'home.html',d)
     return render(request,'home.html')
+
+
+
+
 def registration(request):
     uf=UserForm()
     pf=ProfileForm()
@@ -23,19 +33,17 @@ def registration(request):
             USO.save()
 
             PFO=PD.save(commit=False)
-            PFO.User=USO
+            PFO.user=USO
             PFO.save()
 
             send_mail('User registration',
-            'Registration is successful',
+            'Regiistration is success full',
             'bunnyshivaprasad2000@gmail.com',
             [USO.email],fail_silently=False)
 
 
             return HttpResponse('Registration is Successfull')
     return render(request,'registration.html',d)
-
-
 
 
 def user_login(request):
@@ -49,6 +57,8 @@ def user_login(request):
             return HttpResponseRedirect(reverse('home'))
 
 
+
+
     return render(request,'user_login.html')
 
 
@@ -56,6 +66,64 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return HttpResponseRedirect(reverse('home'))
+
+
+@login_required
+def profile_info(request):
+    username=request.session.get('username')
+    USD=User.objects.get(username=username)
+    PFD=Profile.objects.get(User=USD)
+    d={'USD':USD,'PFD':PFD}
+    return render(request,'profile_info.html',d)
+
+
+@login_required
+def change_password(request):
+    if request.method=='POST':
+        username=request.session.get('username')
+        npw=request.POST['npw']
+        USO=User.objects.get(username=username)
+        USO.set_password(npw)
+        USO.save()
+        return HttpResponseRedirect(reverse('user_login'))
+    return render(request,'change_password.html')
+
+def reset_password(request):
+    if request.method=='POST':
+        username=request.POST['username']
+        npw=request.POST['npw']
+        LUSO=User.objects.filter(username=username)
+        if LUSO:
+            LUSO[0].set_password(npw)
+            LUSO[0].save()
+            return HttpResponseRedirect(reverse('user_login'))
+        else:
+            return HttpResponse('Username is not available in my data abse')
+    return render(request,'reset_password.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+
+
+
+
+   
+
+
+
 
 
 
